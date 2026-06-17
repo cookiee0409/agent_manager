@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Office</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="에이전트 현황">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">AO</div>
+          <div>
+            <h1>Agent Office</h1>
+            <p>업무 호출 라운지</p>
+          </div>
+        </div>
+
+        <section class="summary-panel" aria-label="전체 작업 요약">
+          <div>
+            <span class="summary-value" id="active-count">0</span>
+            <span class="summary-label">진행 중</span>
+          </div>
+          <div>
+            <span class="summary-value" id="queued-count">0</span>
+            <span class="summary-label">대기</span>
+          </div>
+          <div>
+            <span class="summary-value" id="done-count">0</span>
+            <span class="summary-label">완료</span>
+          </div>
+        </section>
+
+        <div class="sidebar-actions" aria-label="관리 도구">
+          <button id="open-key-modal" class="tool-button" type="button">API 키 관리</button>
+          <button id="open-records-modal" class="tool-button" type="button">기록실</button>
+          <button id="open-manage-modal" class="tool-button accent" type="button">에이전트 고용 · 관리</button>
+        </div>
+
+        <section class="agent-roster" aria-label="에이전트 목록">
+          <div class="section-title">
+            <h2>에이전트</h2>
+            <span id="online-count">0명 준비</span>
+          </div>
+          <div id="roster-list" class="roster-list"></div>
+        </section>
+      </aside>
+
+      <section class="office-stage" aria-label="사무실 배치도">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Executive Office View</p>
+            <h2>좌석, 담당자, 진행 상태를 한 화면에서 확인하세요</h2>
+          </div>
+          <div class="topbar-actions" role="group" aria-label="보기 필터">
+            <button class="icon-button active" type="button" data-filter="all" title="전체 보기">All</button>
+            <button class="icon-button" type="button" data-filter="busy" title="작업 중">Work</button>
+            <button class="icon-button" type="button" data-filter="idle" title="대기 중">Idle</button>
+          </div>
+        </header>
+
+        <div class="office-map">
+          <section class="meeting-room" aria-label="회의실">
+            <div class="meeting-room-head">
+              <span>Meeting Room</span>
+              <strong id="meeting-count">0건</strong>
+            </div>
+            <div id="meeting-list" class="meeting-list"></div>
+          </section>
+          <section class="progress-monitor" aria-label="전체 에이전트 진행상황">
+            <div class="monitor-frame">
+              <div class="monitor-toolbar">
+                <span>Live Progress</span>
+                <strong id="monitor-log-count">0 logs</strong>
+              </div>
+              <div id="progress-monitor-list" class="progress-monitor-list"></div>
+            </div>
+          </section>
+          <div class="office-label label-window">City Window</div>
+          <div class="office-label label-ops">Ops Wall</div>
+          <div class="desks" id="desk-grid"></div>
+        </div>
+      </section>
+
+      <aside class="work-panel" aria-label="작업 요청 패널">
+        <section class="selected-agent" id="selected-agent"></section>
+
+        <section class="request-card">
+          <div class="section-title">
+            <h2>작업 요청</h2>
+            <span id="selected-agent-name">에이전트 선택</span>
+          </div>
+
+          <label class="field">
+            <span>작업 제목</span>
+            <input id="task-title" type="text" placeholder="예: 경쟁사 가격 분석">
+          </label>
+
+          <label class="field">
+            <span>작업 설명</span>
+            <textarea id="task-detail" rows="5" placeholder="맡길 내용을 짧고 구체적으로 적어주세요"></textarea>
+          </label>
+
+          <label class="toggle-row">
+            <input id="meeting-mode" type="checkbox">
+            <span>회의실 협업으로 여러 에이전트에게 동시에 요청</span>
+          </label>
+
+          <div id="meeting-agent-picker" class="meeting-agent-picker" hidden></div>
+
+          <div class="split-fields">
+            <label class="field">
+              <span>우선순위</span>
+              <select id="task-priority">
+                <option value="높음">높음</option>
+                <option value="보통" selected>보통</option>
+                <option value="낮음">낮음</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>AI 제공자</span>
+              <select id="task-provider">
+                <option value="auto" selected>자동 선택</option>
+                <option value="google">Google AI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>마감</span>
+              <input id="task-due" type="date">
+            </label>
+          </div>
+
+          <button id="assign-task" class="primary-action" type="button">선택한 에이전트에게 요청</button>
+        </section>
+
+        <section class="task-board" aria-label="할당된 작업">
+          <div class="section-title">
+            <h2>작업 보드</h2>
+            <span id="task-count">0건</span>
+          </div>
+          <div id="task-list" class="task-list"></div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="modal-shell" id="api-modal" role="dialog" aria-modal="true" aria-labelledby="api-modal-title" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-card key-modal-card">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">Access Desk</p>
+            <h2 id="api-modal-title">API 키 관리</h2>
+          </div>
+          <button class="close-button" type="button" data-close-modal title="닫기">Close</button>
+        </header>
+
+        <div class="security-note">
+          실제 실행은 Vercel 환경변수의 API 키만 사용합니다. 브라우저에는 운영 키를 입력하거나 저장하지 마세요.
+        </div>
+
+        <div class="provider-status-grid" id="provider-status-grid">
+          <div>
+            <strong id="google-status">확인 전</strong>
+            <span>Google AI</span>
+          </div>
+          <div>
+            <strong id="anthropic-status">확인 전</strong>
+            <span>Anthropic</span>
+          </div>
+        </div>
+
+        <section class="bulk-key-box hidden-config">
+          <label class="field">
+            <span>Google AI 일괄 키</span>
+            <input id="bulk-google-key" type="password" autocomplete="off" placeholder="Google AI 키를 모든 에이전트에게 할당">
+          </label>
+          <label class="field">
+            <span>Anthropic 일괄 키</span>
+            <input id="bulk-anthropic-key" type="password" autocomplete="off" placeholder="Anthropic 키를 모든 에이전트에게 할당">
+          </label>
+          <button id="assign-all-keys" class="primary-action" type="button">입력한 키 일괄 할당</button>
+        </section>
+
+        <div class="agent-key-list hidden-config" id="agent-key-list"></div>
+      </div>
+    </section>
+
+    <section class="modal-shell" id="manage-modal" role="dialog" aria-modal="true" aria-labelledby="manage-modal-title" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-card manage-modal-card">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">Hiring Office</p>
+            <h2 id="manage-modal-title">에이전트 고용 · 관리</h2>
+          </div>
+          <button class="close-button" type="button" data-close-modal title="닫기">Close</button>
+        </header>
+
+        <div class="manage-layout">
+          <aside class="manage-list-panel">
+            <button id="hire-agent" class="primary-action" type="button">새 에이전트 고용</button>
+            <div id="manage-agent-list" class="manage-agent-list"></div>
+          </aside>
+
+          <form id="agent-form" class="agent-form">
+            <div class="image-preview" id="form-image-preview"></div>
+            <div class="split-fields">
+              <label class="field">
+                <span>이름</span>
+                <input id="agent-name-input" type="text" required>
+              </label>
+              <label class="field">
+                <span>이니셜</span>
+                <input id="agent-initials-input" type="text" maxlength="4" required>
+              </label>
+            </div>
+            <label class="field">
+              <span>역할</span>
+              <input id="agent-role-input" type="text" required>
+            </label>
+            <label class="field">
+              <span>설정값 · 업무 지침</span>
+              <textarea id="agent-capability-input" rows="4" placeholder="모델, 톤, 금지사항, 선호 작업 방식 등을 입력"></textarea>
+            </label>
+            <div class="split-fields">
+              <label class="field">
+                <span>좌석</span>
+                <input id="agent-location-input" type="text">
+              </label>
+              <label class="field">
+                <span>기본 상태</span>
+                <select id="agent-status-input">
+                  <option value="대기">대기</option>
+                  <option value="진행">진행</option>
+                  <option value="완료">완료</option>
+                </select>
+              </label>
+            </div>
+            <div class="split-fields">
+              <label class="field">
+                <span>대표 색상</span>
+                <input id="agent-color-input" type="color">
+              </label>
+              <label class="field">
+                <span>대표 이미지 경로</span>
+                <input id="agent-image-input" type="text" placeholder="./assets/agent-name.png">
+              </label>
+            </div>
+            <div class="file-pick-row">
+              <input id="agent-image-file" type="file" accept="image/*">
+              <button id="pick-agent-image" class="tool-button" type="button">폴더에서 이미지 선택</button>
+            </div>
+            <section class="asset-picker" aria-label="assets 이미지 선택">
+              <div class="asset-picker-head">
+                <span>assets 캐릭터 선택</span>
+                <button id="refresh-assets" class="tool-button compact-tool" type="button">새로고침</button>
+              </div>
+              <div id="asset-gallery" class="asset-gallery"></div>
+            </section>
+            <div class="form-actions">
+              <button id="save-agent" class="primary-action" type="submit">설정 저장</button>
+              <button id="remove-agent" class="danger-action" type="button">에이전트 내보내기</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="modal-shell" id="records-modal" role="dialog" aria-modal="true" aria-labelledby="records-modal-title" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-card records-modal-card">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">Archive Room</p>
+            <h2 id="records-modal-title">기록실</h2>
+          </div>
+          <button class="close-button" type="button" data-close-modal title="닫기">Close</button>
+        </header>
+        <div class="records-toolbar">
+          <span id="record-count">0건 기록</span>
+          <button id="clear-records" class="danger-action compact" type="button">전체 삭제</button>
+        </div>
+        <div id="record-list" class="record-list"></div>
+      </div>
+    </section>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

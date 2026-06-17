@@ -1,0 +1,12 @@
+{
+  "name": "agent-manager",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check app.js && node --check server.js && node --check api/run-agent.js && node --check api/status.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
