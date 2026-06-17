@@ -28,6 +28,10 @@ Optional model overrides:
 - `GOOGLE_MODEL` or `GEMINI_MODEL`
 - `ANTHROPIC_MODEL`
 
+The default Google model is `gemini-2.5-flash`. Legacy values
+`gemini-1.5-flash` and `gemini-1.5-flash-latest` are migrated to that model
+automatically because Gemini 1.5 is no longer available through the API.
+
 Use the Vercel framework preset `Other`. The repository's `vercel.json` explicitly builds the static frontend and the `api/*.js` serverless functions. `server.js` is only for local development.
 
 ## Security Note

@@ -74,7 +74,7 @@ function getGoogleKey() {
 }
 
 async function callGoogle(system, prompt) {
-  const model = process.env.GOOGLE_MODEL || process.env.GEMINI_MODEL || "gemini-1.5-flash";
+  const model = getGoogleModel();
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(getGoogleKey())}`;
   const response = await fetch(endpoint, {
     method: "POST",
@@ -89,6 +89,18 @@ async function callGoogle(system, prompt) {
   if (!response.ok) throw new Error(data.error?.message || `Google AI 요청 실패 (${response.status})`);
   const parts = data.candidates?.[0]?.content?.parts || [];
   return parts.map((part) => part.text || "").join("\n").trim() || "응답 텍스트가 비어 있습니다.";
+}
+
+function getGoogleModel() {
+  const configured = process.env.GOOGLE_MODEL || process.env.GEMINI_MODEL || "";
+  const model = configured.replace(/^models\//, "");
+
+  // Gemini 1.5 models are no longer served by the Gemini API.
+  if (!model || model === "gemini-1.5-flash" || model === "gemini-1.5-flash-latest") {
+    return "gemini-2.5-flash";
+  }
+
+  return model;
 }
 
 async function callAnthropic(system, prompt) {
